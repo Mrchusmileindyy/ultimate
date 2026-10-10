@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>系统检测中</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+body{background:#07090d;color:#fff}
+.stage{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:28px}
+.stage.on{display:flex}
+
+.shield{font-size:52px;margin-bottom:22px;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5;transform:scale(.96)}50%{opacity:1;transform:scale(1.04)}}
+.stitle{font-size:17px;letter-spacing:4px;color:#9fb0c9;margin-bottom:26px}
+.sbar{width:min(74vw,320px);height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+.sbar-fill{height:100%;width:0;background:linear-gradient(90deg,#5cb8ff,#7ee0c0)}
+.smsg{margin-top:18px;font-size:14px;color:#7b8aa3;min-height:20px}
+.tip{position:fixed;bottom:26px;left:0;right:0;text-align:center;font-size:12px;color:#4d566b}
+
+#s2{background:#3b0505}
+.warn{font-size:74px;color:#ff5a5a;margin-bottom:14px;animation:blink .45s steps(2) infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.dtitle{font-size:30px;font-weight:800;letter-spacing:6px;color:#ff5a5a}
+.dsub{margin-top:20px;font-size:15px;color:#ffb3b3;min-height:22px}
+
+.count{font-size:130px;font-weight:800;color:#ff5a5a}
+@keyframes pop{from{transform:scale(1.5);opacity:0}to{transform:scale(1);opacity:1}}
+
+#s4{background:#fdf6ee;color:#2b2016}
+.rbig{font-size:16px;letter-spacing:4px;color:#b08d5f;margin-bottom:16px}
+.rtext{font-size:27px;font-weight:800;line-height:1.5;margin-bottom:22px;color:#2b2016}
+.rsub{font-size:14px;color:#9a8a72;line-height:1.8}
+.rlink{margin-top:26px;display:inline-block;padding:12px 30px;border-radius:999px;
+  background:#2b2016;color:#fdf6ee;font-size:14px;text-decoration:none}
+.snow{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:20}
+</style>
+</head>
+<body>
+<div class="stage on" id="s1">
+  <div class="shield">🛡️</div>
+  <div class="stitle">系统安全检测</div>
+  <div class="sbar"><div class="sbar-fill" id="bar"></div></div>
+  <div class="smsg" id="msg">正在扫描设备…</div>
+  <div class="tip">（建议开启声音体验，音量调小一点）</div>
+</div>
+
+<div class="stage" id="s2">
+  <div class="warn">⚠️</div>
+  <div class="dtitle">发现严重问题</div>
+  <div class="dsub" id="dsub">正在分析…</div>
+</div>
+
+<div class="stage" id="s3">
+  <div class="count" id="cnt">3</div>
+</div>
+
+<div class="stage" id="s4">
+  <div class="rbig">问题是……</div>
+  <div class="rtext" id="rtext"></div>
+  <div class="rsub">骗你的 · 祝你今天开心 💖</div>
+  <a class="rlink" href="">再来一次</a>
+</div>
+
+<script>
+(function(){
+  var s1=document.getElementById('s1'), s2=document.getElementById('s2'),
+      s3=document.getElementById('s3'), s4=document.getElementById('s4');
+  var bar=document.getElementById('bar'), msg=document.getElementById('msg');
+  var dsub=document.getElementById('dsub'), cnt=document.getElementById('cnt');
+  var rtext=document.getElementById('rtext');
+
+  var scanMsgs=['正在扫描设备…','检查系统权限…','分析安全风险…','比对云端数据库…','发现异常 ⚠'];
+  var dangerSeq=['正在分析…','异常等级：严重','设备存在高风险项','即将执行强制处理…'];
+  var lines=[
+    '你太好看了，系统处理不来 😌',
+    '你的颜值已超出测量范围 📈',
+    '检测失败：好看值严重过载',
+    '系统崩溃原因：你太可爱了',
+    '恭喜！你获得了一个：啥也没有'
+  ];
+  var msgParam=(function(){var m=/[?&]msg=([^&]*)/.exec(location.search);
+    return m?decodeURIComponent(m[1].replace(/\+/g,' ')):null;})();
+
+  var ac;
+  function beep(f,dur,type,vol,delay){
+    try{
+      ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+      var t0=ac.currentTime+(delay||0);
+      var o=ac.createOscillator(), g=ac.createGain();
+      o.type=type||'sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0,t0);
+      g.gain.linearRampToValueAtTime(vol||0.05,t0+0.02);
+      g.gain.linearRampToValueAtTime(0,t0+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t0); o.stop(t0+dur+0.05);
+    }catch(e){}
+  }
+
+  function show(el){
+    [s1,s2,s3,s4].forEach(function(x){ x.classList.remove('on'); });
+    el.classList.add('on');
+  }
+
+  var p=0;
+  var tick=setInterval(function(){
+    p+=Math.random()*13+6;
+    if(p>100) p=100;
+    bar.style.width=p+'%';
+    msg.textContent=scanMsgs[Math.min(Math.floor(p/22),scanMsgs.length-1)];
+    if(p>=100){ clearInterval(tick); setTimeout(toDanger,520); }
+  },240);
+
+  function toDanger(){
+    show(s2);
+    beep(220,0.18,'square',0.05,0);
+    beep(220,0.18,'square',0.05,0.26);
+    var i=0;
+    var t=setInterval(function(){
+      dsub.textContent=dangerSeq[Math.min(i,dangerSeq.length-1)];
+      beep(300,0.06,'square',0.03);
+      if(++i>dangerSeq.length){ clearInterval(t); setTimeout(toCount,600); }
+    },560);
+  }
+
+  function toCount(){
+    show(s3);
+    var n=3;
+    cnt.textContent=n;
+    beep(600,0.12,'sine',0.05);
+    var t=setInterval(function(){
+      n--;
+      if(n<=0){ clearInterval(t); toReveal(); return; }
+      cnt.textContent=n;
+      cnt.style.animation='none'; void cnt.offsetWidth; cnt.style.animation='pop .8s ease-out';
+      beep(600,0.12,'sine',0.05);
+    },820);
+  }
+
+  function toReveal(){
+    show(s4);
+    rtext.textContent=msgParam||lines[(Math.random()*lines.length)|0];
+    beep(880,0.14,'sine',0.05,0);
+    beep(1174,0.14,'sine',0.05,0.16);
+    beep(1568,0.4,'sine',0.05,0.32);
+    rain();
+  }
+
+  function rain(){
+    var set=['🎉','✨','💖','🌸','🎊','😌','🥳','🎈'];
+    var n=0;
+    var timer=setInterval(function(){
+      var el=document.createElement('div');
+      el.className='snow';
+      el.textContent=set[(Math.random()*set.length)|0];
+      el.style.left=(Math.random()*(innerWidth-30))+'px';
+      el.style.transition='transform 2.8s linear, opacity 2.8s';
+      document.body.appendChild(el);
+      requestAnimationFrame(function(){
+        el.style.transform='translateY('+(innerHeight+90)+'px) rotate('+(Math.random()*300-150)+'deg)';
+        el.style.opacity='0.2';
+      });
+      setTimeout(function(){el.remove();},2900);
+      if(++n>30) clearInterval(timer);
+    },100);
+  }
+
+  document.addEventListener('touchstart',function(){ if(ac && ac.state==='suspended') ac.resume(); },{passive:true});
+  document.addEventListener('click',function(){ if(ac && ac.state==='suspended') ac.resume(); });
+})();
+</script>
+</body>
+</html>

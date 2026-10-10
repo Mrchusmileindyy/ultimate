@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>整蛊链接生成器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:#0f1420;color:#e8edf7;padding:30px 18px;min-height:100vh}
+.wrap{max-width:580px;margin:0 auto}
+h1{font-size:20px;font-weight:600;margin-bottom:8px}
+.lead{font-size:13px;color:#7b8aa3;margin-bottom:24px;line-height:1.75}
+.tabs{display:flex;gap:8px;margin-bottom:22px}
+.tab{flex:1;text-align:center;padding:12px 8px;border-radius:10px;font-size:14px;cursor:pointer;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#9fb0c9;
+  transition:.2s;-webkit-user-select:none;user-select:none}
+.tab.on{background:linear-gradient(135deg,#7ee0c0,#5cb8ff);color:#04121a;font-weight:600;border-color:transparent}
+.field{margin-bottom:15px}
+label{display:block;font-size:13px;color:#9fb0c9;margin-bottom:7px}
+label span{color:#5b6478;font-size:12px}
+input{width:100%;padding:12px 14px;border-radius:10px;font-size:14px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#e8edf7;
+  font-family:inherit;outline:none;transition:border-color .2s}
+input:focus{border-color:#5cb8ff}
+.pane{display:none}
+.pane.on{display:block}
+.out{margin-top:22px;background:rgba(126,224,192,.06);border:1px dashed rgba(126,224,192,.4);
+  border-radius:12px;padding:16px}
+.out .k{font-size:12px;color:#7ee0c0;letter-spacing:1px;margin-bottom:9px}
+.out .u{font-size:13px;line-height:1.65;word-break:break-all;color:#cfe3ff;
+  font-family:ui-monospace,Consolas,"Courier New",monospace}
+.copy{margin-top:13px;width:100%;padding:13px;border-radius:10px;border:0;cursor:pointer;
+  font-size:14px;font-weight:600;color:#04121a;background:linear-gradient(135deg,#7ee0c0,#5cb8ff);
+  font-family:inherit}
+.copy:active{opacity:.8}
+.tip{font-size:12px;color:#5b6478;margin-top:16px;line-height:1.8}
+.tip b{color:#8b96ad;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>整蛊链接生成器</h1>
+  <p class="lead">填好内容 → 复制下面的链接 → 发给朋友。同一页面，换成不同文字，就是一人一份的专属整蛊。</p>
+
+  <div class="tabs">
+    <div class="tab on" data-t="chase">按钮追着跑</div>
+    <div class="tab" data-t="warn">假警告反转</div>
+  </div>
+
+  <div class="pane on" id="pane-chase">
+    <div class="field">
+      <label>结局主文案 <span>（朋友追累后看到的第一句）</span></label>
+      <input id="c-msg" value="好啦，你被整了 😜">
+    </div>
+    <div class="field">
+      <label>进度快满时的话 <span>（快到 80% 时显示）</span></label>
+      <input id="c-cheer" value="就快好了！再点一下就通过 ✅">
+    </div>
+    <div class="field">
+      <label>结尾提示</label>
+      <input id="c-tip" value="这个按钮是抓不到的，别不服气。">
+    </div>
+    <div class="field">
+      <label>署名 / 落款</label>
+      <input id="c-sign" value="祝你今天开心 💖">
+    </div>
+    <div class="field">
+      <label>要追几次才结束 <span>（数字越大折磨越久，推荐 15~25）</span></label>
+      <input id="c-times" type="number" min="3" max="99" value="15">
+    </div>
+  </div>
+
+  <div class="pane" id="pane-warn">
+    <div class="field">
+      <label>反转后的文案 <span>（"问题是……"后面那句）</span></label>
+      <input id="w-msg" value="你太好看了，系统处理不来 😌">
+    </div>
+  </div>
+
+  <div class="field">
+    <label>站点地址 <span>（你 GitHub Pages 上 fun 文件夹的完整网址）</span></label>
+    <input id="base" value="https://mrchusmileindyy.github.io/ultimate/fun/">
+  </div>
+
+  <div class="out">
+    <div class="k">你的专属链接</div>
+    <div class="u" id="result">—</div>
+    <button class="copy" id="copy">复制链接</button>
+  </div>
+
+  <p class="tip">
+    <b>怎么用：</b>把上面的链接发给朋友，他点开就是你定制的内容。<br>
+    <b>注意：</b>先上传好 <b>fun</b> 文件夹到仓库，链接才有效；emoji 和中文都可以直接填。
+  </p>
+</div>
+
+<script>
+(function(){
+  var type='chase';
+  var q=function(id){return document.getElementById(id);};
+
+  function build(){
+    var base=q('base').value.trim();
+    if(base && base.charAt(base.length-1)!=='/') base+='/';
+    var url=base+(type==='chase'?'':'warning.html');
+    var ps=[];
+    function add(k,v){ if(v!=='' && v!=null) ps.push(k+'='+encodeURIComponent(v)); }
+
+    if(type==='chase'){
+      add('msg',q('c-msg').value);
+      add('cheer',q('c-cheer').value);
+      add('tip',q('c-tip').value);
+      add('sign',q('c-sign').value);
+      var t=parseInt(q('c-times').value,10);
+      if(t>0) add('times',t);
+    }else{
+      add('msg',q('w-msg').value);
+    }
+    return url+(ps.length?'?'+ps.join('&'):'');
+  }
+
+  function render(){ q('result').textContent=build(); }
+
+  document.querySelectorAll('.tab').forEach(function(tab){
+    tab.addEventListener('click',function(){
+      document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});
+      document.querySelectorAll('.pane').forEach(function(x){x.classList.remove('on');});
+      tab.classList.add('on');
+      type=tab.getAttribute('data-t');
+      q('pane-'+type).classList.add('on');
+      render();
+    });
+  });
+
+  ['c-msg','c-cheer','c-tip','c-sign','c-times','w-msg','base'].forEach(function(id){
+    q(id).addEventListener('input',render);
+  });
+
+  var copyBtn=q('copy');
+  copyBtn.addEventListener('click',function(){
+    var text=build();
+    function done(){ copyBtn.textContent='已复制 ✓'; setTimeout(function(){copyBtn.textContent='复制链接';},1500); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done,function(){ fallback(text,done); });
+    }else{ fallback(text,done); }
+  });
+
+  function fallback(text,done){
+    var ta=document.createElement('textarea');
+    ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){ alert('复制失败，请手动选中上面的链接'); }
+    ta.remove();
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
